@@ -618,6 +618,17 @@ Do not change a production prompt, model or schema without running the relevant 
 - Mobile layouts must be deliberately designed.
 - Use plain-English operational states rather than meaningless completion percentages.
 - Source, interpretation and customer decision must be visually distinct.
+- Visible focus states on every interactive element.
+- Semantic headings and properly labelled inputs.
+- Sufficient contrast; colour is never the only status indicator.
+- Accessible dialogs and drawers with focus trapping where appropriate.
+- Focus restoration after a dialog or drawer closes.
+- Meaningful button labels and accessible loading and error feedback.
+- Screen-reader-friendly tables and pagination.
+- Reduced-motion support.
+- Touch targets suitable for mobile.
+
+Do not claim design work is complete until accessibility checks pass for the affected flow.
 
 ## Git workflow during solo development
 
@@ -1071,3 +1082,936 @@ Stop before claiming completion and state:
 7. What functionality remains unavailable until complete.
 
 Never paste, print or request secrets in the conversation.
+
+# Tender OS enforceable quality, security and scale rules
+
+These rules make the standards above enforceable. They add design, security,
+scale, correctness and reliability requirements and, where noted, extend an
+existing section rather than replace it. They never override the safety rules at
+the top of this file.
+
+## Product design quality
+
+Tender OS must not look like a generic AI-generated SaaS application.
+
+The product must feel:
+
+- calm
+- premium
+- decisive
+- trustworthy
+- commercially serious
+- evidence-led
+- exceptionally easy to understand
+
+Avoid:
+
+- generic KPI strips
+- excessive cards
+- heavy borders
+- bright blue default actions
+- decorative gradients
+- neon colours
+- AI sparkle icons
+- random status pills
+- huge empty hero areas
+- generic analytics charts
+- procurement database tables
+- inconsistent spacing
+- one-off component styling
+- arbitrary colour usage
+- desktop layouts simply stacked on mobile
+- placeholder copy that survives into production
+- dashboards where every element has equal visual weight
+
+Use:
+
+- the established Tender OS design tokens
+- CSS variables for brand colours
+- one typography system
+- one spacing scale
+- one radius system
+- one elevation system
+- one icon library
+- one set of status patterns
+- one set of action patterns
+- one component library
+- one responsive breakpoint strategy
+
+Do not introduce a new visual pattern when an existing component can be extended.
+
+Before creating a new component:
+
+1. Search for an existing equivalent.
+2. Check whether the design system already supports the use case.
+3. Extend the existing component where appropriate.
+4. Avoid near-duplicate components with slightly different styling.
+
+## Design-system enforcement
+
+Maintain canonical reusable components for:
+
+- page header
+- primary action
+- secondary action
+- destructive action
+- status badge
+- verdict state
+- confidence state
+- source provenance
+- empty state
+- error state
+- loading state
+- list row
+- detail drawer
+- confirmation card
+- action queue item
+- evidence row
+- bid status
+- form field
+- mobile bottom action bar
+- modal and drawer
+- table and paginated list
+
+Do not hardcode:
+
+- colours
+- spacing
+- radii
+- shadows
+- status styles
+- button variants
+- arbitrary widths
+
+Use tokens and component variants.
+
+Create a visual-regression or screenshot-testing strategy for critical screens.
+
+Critical visual screens include:
+
+- company setup
+- company profile
+- home decision queue
+- opportunity Decision Pack
+- missing-information flow
+- evidence map
+- bid workspace
+- approvals
+- final submission gate
+- internal research dashboard
+
+Any large visual change must be checked at:
+
+- 1440px desktop
+- 1280px laptop
+- tablet
+- approximately 390px mobile
+
+## UX consistency
+
+Extends `Canonical state`. Every screen must have:
+
+- one clear purpose
+- one dominant action
+- no more than two visible secondary actions
+- plain-English explanation before technical detail
+- consistent terminology
+- consistent status names
+- consistent action labels
+- consistent error behaviour
+- consistent source presentation
+- consistent confirmation behaviour
+
+Do not use multiple terms for the same concept.
+
+Examples:
+
+- use opportunity matching, not a mix of Tender Watch, monitoring and scanning
+- use Confirmed, Found, Requires confirmation, Missing and Expired or conflicting consistently
+- use Bid, Investigate, Prepare and No bid consistently
+- use one canonical label for each bid stage
+- use one canonical label for each customer action state
+
+All customer-facing copy must use concise UK English.
+
+Do not allow contradictory states such as:
+
+- Investigate verdict with a recommendation saying Bid
+- one page showing High confidence and another Medium confidence
+- one screen showing three unresolved items and another showing four
+- different deadlines or requirement counts for the same tender
+
+Every customer-facing value must come from one canonical state source.
+
+(Accessibility requirements are defined in `Accessibility and UX` above.)
+
+## Security is a build-time requirement
+
+Security must be implemented with the first version of a feature.
+
+Do not create insecure temporary implementations with the intention of securing them later.
+
+Every feature design must include:
+
+- authentication
+- authorisation
+- tenant isolation
+- RLS
+- input validation
+- output validation
+- audit history
+- rate limiting where appropriate
+- idempotency where appropriate
+- error handling
+- secrets handling
+- environment isolation
+- abuse prevention
+- data retention
+- logging and observability
+
+Security requirements are acceptance criteria, not post-launch enhancements.
+
+## Deny-by-default RLS
+
+Extends `Multi tenant security`. Every tenant-owned table must:
+
+- enable RLS
+- include organisation_id
+- have explicit policies
+- restrict policies to explicit roles
+- use deny-by-default behaviour
+- be covered by tenant-isolation tests
+
+Prohibited policy patterns:
+
+- USING true
+- WITH CHECK true
+- policies with no explicit TO clause
+- policies applying to PUBLIC unless explicitly justified
+- policies checking only that a token exists
+- policies such as share_token IS NOT NULL
+- policies trusting organisation_id supplied by the client
+- policies relying only on hidden UI
+
+Token-based access must compare the supplied token securely to the exact scoped record.
+
+Example of prohibited logic:
+
+- USING share_token IS NOT NULL
+
+Required conceptual logic:
+
+- supplied token matches the record token
+- token is not expired
+- token has not been revoked
+- token is scoped to the exact record and action
+
+## RLS enforcement tests
+
+Extends `Testing requirements`. Documentation is not sufficient.
+
+Add mandatory automated checks that fail when:
+
+- a tenant-owned table has RLS disabled
+- a policy contains USING true
+- a policy contains WITH CHECK true
+- a policy has no explicit TO clause
+- a customer table exposes anon access unexpectedly
+- a token policy checks token existence rather than equality
+- a new tenant-owned table lacks policies
+- a service-role path lacks independent authorisation checks
+
+The RLS security test must run in CI and before push where practical.
+
+Every new table migration must include:
+
+- RLS enablement
+- policies
+- indexes
+- tenant isolation test
+- authorised-access test
+- unauthorised-access test
+
+## Service-role restrictions
+
+Extends the service-role rules in `Multi tenant security`. The Supabase service role must not be used as a convenience bypass.
+
+Rules:
+
+- no service-role client in browser code
+- no service-role client in ordinary customer request paths
+- every service-role operation validates user identity and organisation access separately
+- service-role functions must be small and explicitly named
+- service-role use must be documented in the code
+- service-role operations require tests for cross-tenant denial
+- service-role keys must never be logged
+
+## Silent failure is prohibited
+
+Extends the error-handling rules in `Code rules`. Every write operation must:
+
+- check the returned error
+- check the expected affected-row count where relevant
+- return failure when any required step fails
+- avoid returning success prematurely
+- record enough context for diagnosis
+- preserve transactional consistency
+
+Prohibited patterns:
+
+- empty catch blocks
+- catch with no action
+- catch returning success
+- .catch(() => {})
+- ignoring Supabase errors
+- delete then insert without checking both operations
+- defaulting failed numeric queries to zero
+- using nullish fallback to hide query failure
+- returning success when child writes failed
+
+Examples of dangerous fallbacks:
+
+- count ?? 0 after a failed query
+- rows ?? [] when the query errored
+- return success true after partial failure
+
+Differentiate:
+
+- zero results
+- no data
+- unavailable
+- failed query
+- unauthorised
+- validation failure
+
+These must not collapse into the same value.
+
+## Silent-write enforcement
+
+Add automated checks or lint rules that fail on:
+
+- empty catch blocks
+- .catch(() => {})
+- ignored Supabase mutation errors
+- server actions returning success without checking mutation results
+- unsafe fallback patterns in critical financial or operational queries
+
+Where static enforcement is difficult, create targeted tests for high-risk mutations.
+
+Every server mutation test must cover:
+
+- valid success
+- invalid input
+- database failure
+- partial child-write failure
+- unauthorised access
+- cross-tenant access
+- retry behaviour where applicable
+
+## State-machine enforcement
+
+Any entity with controlled lifecycle states must have one canonical transition function.
+
+Examples:
+
+- opportunity
+- qualification
+- bid
+- evidence item
+- research run
+- document processing
+- payment
+- subscription
+- invoice
+- email
+- colleague request
+- approval
+- commitment
+- submission
+
+Prohibited:
+
+- raw update status calls outside the state-machine module
+- direct status mutation from UI code
+- webhook handlers setting status without transition validation
+- migrations or scripts bypassing lifecycle rules unless explicitly approved
+- multiple implementations of the same transition logic
+
+Each state machine must define:
+
+- valid states
+- valid transitions
+- actor permissions
+- transition prerequisites
+- side effects
+- audit event
+- idempotency behaviour
+- terminal states
+
+## State-machine enforcement tests
+
+Create a static or AST-based check that fails if controlled status fields are updated outside approved transition modules.
+
+A grep-based test may be used initially, but prefer a structured rule where practical.
+
+Tests must cover:
+
+- every valid transition
+- invalid transitions
+- repeated transition
+- unauthorised transition
+- concurrent transition
+- transition side effects
+- history creation
+- rollback on failure
+
+## Scale-first data access
+
+Design every list and query for growth from the first implementation.
+
+Assume:
+
+- many organisations
+- many opportunities
+- many documents
+- many findings
+- many evidence records
+- many bid questions
+- high-volume procurement data
+- large audit histories
+- large notification volumes
+- long-running research jobs
+
+Do not write data access that only works for demo volumes.
+
+## Pagination
+
+Every unbounded list must use pagination.
+
+Do not rely on hidden default row limits.
+
+Do not fetch all rows and paginate in the browser.
+
+Use server-side pagination.
+
+Prefer cursor or keyset pagination for large or frequently changing datasets.
+
+Offset pagination may be used only when:
+
+- datasets are modest
+- stable ordering is guaranteed
+- deep-page performance is acceptable
+- the trade-off is documented
+
+Every paginated query must include a stable deterministic order.
+
+Example:
+
+- created_at descending
+- id descending as a tie-breaker
+
+Do not use range pagination without an explicit stable order.
+
+Avoid pagination that can duplicate or omit rows when new records are inserted.
+
+## Count correctness
+
+Do not derive total counts from the length of a paginated or truncated result set.
+
+Use:
+
+- exact count where genuinely required and affordable
+- planned count where appropriate
+- estimated count where exact is unnecessary
+- separate count query
+- no total count when infinite scrolling is more suitable
+
+The UI must not display a plausible but false total.
+
+Document whether each count is:
+
+- exact
+- estimated
+- page count only
+- currently loaded count
+
+## Query limits
+
+Extends the `.limit()` rule in `Code rules`. All list queries must use explicit limits.
+
+Do not use an arbitrary universal limit such as 1000 and assume the data is complete.
+
+A query returning the first 1000 rows must not be treated as the full dataset.
+
+When full-dataset processing is required:
+
+- process in deterministic batches
+- continue until completion
+- record cursor state
+- support retry
+- avoid duplicates
+- verify processed counts
+
+## Batch sizing
+
+Do not use oversized .in() arrays or URL query strings.
+
+For UUID arrays, default batch sizes should normally remain around 200 to 300 unless measured otherwise.
+
+When using an .in() batch:
+
+- document the approximate request-size calculation
+- account for URL encoding
+- stay below provider and proxy limits
+- test realistic worst-case values
+- use server-side joins or temporary tables where better
+
+Do not set a global batchSize without considering data shape.
+
+## Filtering and search
+
+Every filterable list must be designed around indexed server-side filters.
+
+Do not:
+
+- load all rows and filter in the browser
+- use ILIKE percent term percent on large tables without a plan
+- concatenate arbitrary filter SQL
+- apply inconsistent filters between count and data queries
+
+For search at scale, consider:
+
+- trigram indexes
+- full-text search
+- dedicated search vectors
+- external search only when justified
+
+All search inputs must be validated and bounded.
+
+Debounce customer-facing search where appropriate.
+
+## Database indexes
+
+Extends `Database`. Every migration adding a common:
+
+- filter
+- sort
+- join
+- foreign key
+- tenant scope
+- status
+- date range
+- lookup field
+
+must assess whether an index is required.
+
+Composite indexes should reflect real query order.
+
+Do not add indexes blindly.
+
+For significant queries:
+
+- inspect the query plan
+- confirm index usage
+- record expected cardinality
+- test realistic data volumes
+
+## N plus one prevention
+
+Do not perform one database query per row in a list.
+
+Use:
+
+- joins
+- aggregated queries
+- batched lookups
+- precomputed summaries where justified
+- repository methods designed for list views
+
+Add performance tests for critical high-volume views.
+
+## Data-volume testing
+
+Create seeded scale-test datasets or generators for non-production use.
+
+Test representative volumes such as:
+
+- hundreds of organisations
+- hundreds of thousands of opportunities
+- millions of findings or source records where relevant
+- tens of thousands of evidence items
+- large audit histories
+- high notification volume
+
+Do not run destructive scale seeding against production.
+
+All seed and scale scripts must use the existing Supabase safety guard (see DESTRUCTIVE SCRIPT SAFETY at the top of this file).
+
+Performance acceptance should be based on realistic volumes, not empty databases.
+
+## Idempotency for money and communications
+
+Every financial or communication-producing operation requires deterministic idempotency.
+
+This includes:
+
+- Stripe webhook processing
+- invoice creation
+- refund or credit actions
+- bid-credit allocation
+- payment fulfilment
+- email sending
+- reminders
+- colleague invitations
+- profile-complete notifications
+- scheduled alerts
+- document-processing jobs
+- outreach
+- final-pack notifications
+
+Use:
+
+- deterministic idempotency keys
+- unique database constraints
+- durable event records
+- safe replay
+- atomic claim or lock operations
+
+Idempotency must not rely only on application memory.
+
+A retry must not create:
+
+- duplicate payment fulfilment
+- duplicate invoice
+- duplicate credit
+- duplicate email
+- duplicate job
+- duplicate audit event
+
+## Atomicity
+
+Avoid time-of-check to time-of-use races.
+
+Do not:
+
+- check whether an email was sent and then separately insert the send record
+- check credit availability and then separately allocate without a transaction
+- check webhook existence and then process without an atomic claim
+
+Use database uniqueness, transactions or atomic procedures.
+
+## Environment-safe communications
+
+Extends `One live Supabase environment during development`, `Transactional email` and `Stripe billing`. Provider credentials must come from environment variables or approved secret management.
+
+Do not read live provider keys from customer-accessible database tables.
+
+Outside production:
+
+- refuse to send to real recipients
+- use a strict allowlist or sink recipient
+- label messages as non-production where appropriate
+- prevent live Stripe mode
+- prevent bulk outreach
+- prevent historical automation
+- log blocked sends clearly
+
+The send function itself must enforce the environment rule.
+
+Do not rely only on callers behaving correctly.
+
+## Communication cutover safety
+
+Add a configurable automation cutover date.
+
+All automated customer communications must check:
+
+- environment
+- cutover date
+- organisation eligibility
+- record creation date
+- suppression status
+- idempotency key
+
+The cutover date must default to a future date or disabled state.
+
+Automation must require a deliberate production action to become armed.
+
+Do not allow first deployment to process historical back-catalogue automatically.
+
+## Automation reliability
+
+Extends `Background work` and `Observability`. Every scheduled or recurring automation requires:
+
+- registry entry
+- owner
+- expected frequency
+- last successful run
+- next expected run
+- heartbeat
+- failure state
+- retry policy
+- manual retry
+- alert threshold
+
+Add a heartbeat table or equivalent durable record from the first automation.
+
+Add a watchdog that identifies:
+
+- missed runs
+- repeated failures
+- stale heartbeats
+- disabled schedules
+- authentication redirects
+- deployment failures
+- queue backlog
+
+The schedule configuration and automation registry must be tested for consistency.
+
+A test must fail when:
+
+- a configured cron lacks a registry entry
+- a registry entry lacks a schedule
+- a protected route intercepts the automation
+- the automation endpoint cannot authenticate
+- a required environment variable is missing
+
+Do not assume a successful deployment means automation is running.
+
+## Environment validation
+
+Extends `Environment variables`, `Environment separation` and `Manual setup rule`. Create one canonical environment schema.
+
+Use fail-fast validation.
+
+The application must refuse to start or deploy critical functionality when required variables are missing.
+
+Do not allow features to silently disable because a variable is absent.
+
+Environment validation must distinguish:
+
+- local
+- preview
+- production
+
+Each variable must define:
+
+- required environments
+- secret or public
+- expected format
+- purpose
+- validation rule
+
+Critical examples include:
+
+- Supabase URL
+- Supabase publishable key
+- Supabase server secret where permitted
+- AI Gateway key
+- Companies House key
+- Resend key
+- Resend webhook secret
+- Stripe keys
+- Stripe webhook secret
+- Stripe price IDs
+- application URL
+- workflow secrets
+- automation cutover date
+
+Production smoke tests must verify the integration, not only the variable's presence.
+
+## Duplicate logic is prohibited
+
+Extends `Code rules` and `Canonical state`. Do not duplicate domain functions.
+
+Examples include:
+
+- service normalisation
+- serial normalisation
+- tender status labels
+- verdict calculation
+- evidence status
+- money formatting
+- entitlement checks
+- environment checks
+- permission checks
+- company identity matching
+
+Before creating a helper:
+
+1. Search the repository.
+2. Reuse or move the existing implementation.
+3. Update imports.
+4. Remove the duplicate.
+
+Add a check that flags same-named exported functions across multiple files for review.
+
+Where duplicate names are legitimate, explicitly allowlist them.
+
+Do not copy and modify an existing function under a new file because import changes are inconvenient.
+
+## Canonical normalisation
+
+Each normalised field must have one canonical function.
+
+Examples:
+
+- company names
+- company numbers
+- postcodes
+- services
+- CPV codes
+- emails
+- URLs
+- tender references
+- currency
+- identifiers
+- file hashes
+
+Normalisation functions require unit tests covering real edge cases.
+
+## Performance budgets
+
+Define practical performance targets.
+
+Customer-facing targets should include:
+
+- fast initial page response
+- progressive loading for research and large lists
+- no full-page blocking for background work
+- bounded query times
+- bounded server-function execution
+- bounded AI task duration
+- bounded document-processing time
+- paginated large lists
+- visible progress for long tasks
+
+Do not optimise blindly, but do not introduce known unbounded work.
+
+For critical routes, capture:
+
+- database query count
+- slowest query
+- total response time
+- payload size
+- number of records returned
+- AI calls
+- external calls
+
+Add performance instrumentation before high-volume launch.
+
+## Security and scale acceptance checklist
+
+Before a feature is marked complete, verify:
+
+### Security
+
+- authentication implemented
+- authorisation implemented
+- tenant scope implemented
+- RLS enabled
+- RLS policies explicit
+- no USING true
+- no missing TO clause
+- no unsafe token policy
+- no browser-trusted organisation ID
+- input validated
+- output validated
+- secrets server-side
+- audit history created
+- cross-tenant tests pass
+
+### Reliability
+
+- write errors checked
+- no silent fallback
+- idempotency where required
+- retry safe
+- partial failure handled
+- customer sees real failure
+- logs contain correlation ID
+- background work durable
+
+### Scale
+
+- list paginated
+- stable order present
+- explicit limit present
+- count not derived from truncated data
+- filters server-side
+- indexes assessed
+- no N plus one query
+- batch size justified
+- realistic volume tested
+
+### Design
+
+- existing design system used
+- no generic AI styling
+- desktop and mobile reviewed
+- accessibility checked
+- terminology consistent
+- one dominant action
+- canonical state used
+- no duplicate business facts
+- loading error and empty states designed
+
+A feature is not complete unless all applicable categories pass.
+
+## Mandatory automated guards
+
+Extends `Required checks before push`. The following issues have previously recurred in related systems and must be enforced mechanically.
+
+Create or require tests or static checks for:
+
+1. RLS disabled on tenant tables
+2. USING true or WITH CHECK true
+3. policies with no explicit TO clause
+4. unsafe token-existence policies
+5. ignored mutation errors
+6. empty catch blocks
+7. raw status updates outside state-machine modules
+8. duplicate idempotency-sensitive sends or financial writes
+9. missing stable order on paginated queries
+10. counts derived from truncated arrays
+11. oversized .in() query batches
+12. missing indexes for critical list queries
+13. real communications from non-production
+14. missing required environment variables
+15. configured automations without heartbeats
+16. back-catalogue communications before cutover
+17. duplicate normalisation functions
+18. cross-tenant access
+19. service-role operations without explicit authorisation
+20. unbounded customer-facing list queries
+
+For the first three high-risk areas:
+
+- permissive RLS
+- silent writes
+- state-machine bypass
+
+write the failing enforcement test before implementing the next related feature.
+
+Documentation alone is not considered sufficient.
+
+## Development priority
+
+When beginning new feature development:
+
+1. Define the canonical domain object.
+2. Define permissions.
+3. Define tenant scope.
+4. Define RLS.
+5. Write security and state enforcement tests.
+6. Define indexes and query shape.
+7. Define pagination.
+8. Define idempotency.
+9. Define errors and partial failure.
+10. Define observability.
+11. Define design-system components.
+12. Implement the feature.
+13. Run security, scale, UX and accessibility checks.
+14. Verify against the live connected system where safe.
+
+Do not build the happy-path UI first and retrofit security, state integrity or scale later.
