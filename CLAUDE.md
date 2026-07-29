@@ -182,19 +182,30 @@ Create explicit task classes rather than one default model for all work.
 Examples:
 
 - extraction
+- structured website extraction
+- document extraction
 - classification
+- service normalisation
+- company identity matching
+- procurement-award matching
 - summarisation
 - tender translation
+- requirement extraction
+- eligibility reasoning
 - evidence matching
 - grounded drafting
 - claim verification
+- commitment checking
 - complex reasoning
 - image or document analysis
 
 Each task class must define:
 
+- task name
 - preferred model
 - permitted fallback models
+- required capabilities
+- maximum input size
 - maximum output tokens
 - timeout
 - structured schema
@@ -202,12 +213,21 @@ Each task class must define:
 - retry policy
 - data-sensitivity classification
 - evaluation dataset
+- cost limits where appropriate
 
 Do not allow components or server actions to choose arbitrary model names.
 
 Model names and routing rules must be centralised.
 
 Do not change production models without recording the change and running relevant evaluations.
+
+When implementing a new AI capability:
+
+1. Assess the current suitable model options.
+2. Recommend the preferred model and permitted fallbacks.
+3. Explain the cost, accuracy and privacy implications.
+4. Create or update the evaluation set.
+5. Obtain approval before introducing a major new provider dependency.
 
 ## AI Gateway failure behaviour
 
@@ -227,7 +247,7 @@ Do not change production models without recording the change and running relevan
 - Do not reprocess unchanged content hashes.
 - Filter and chunk documents before model calls.
 - Use the smallest model that passes the task evaluation threshold.
-- Do not optimise cost by reducing correctness for eligibility, evidence, claim or commitment checks.
+- Do not optimise cost by reducing correctness for eligibility, evidence, claim, commitment or final-bid-assurance checks.
 - Add organisation-level abuse and usage limits.
 - Surface unexpected cost increases before scaling traffic.
 
@@ -243,7 +263,9 @@ Use Supabase for:
 - audit history
 - job state
 - source records
+- research findings
 - document metadata
+- billing-state mirrors
 - database constraints
 - database-side consistency
 - queues and schedules where justified
@@ -277,11 +299,13 @@ Do not use Supabase Edge Functions merely because Supabase hosts the database.
 
 Before creating one, document:
 
+- the trigger
 - why Vercel is unsuitable
 - expected execution duration
 - memory requirements
 - CPU requirements
 - database-region considerations
+- the security boundary
 - retry model
 - timeout behaviour
 - deployment and monitoring ownership
@@ -297,13 +321,17 @@ Long-running tasks include:
 - company website research
 - website crawling
 - procurement-data ingestion
+- public-procurement award searches
+- Companies House enrichment
 - document extraction
+- certificate processing
 - tender parsing
 - profile refresh
 - evidence indexing
 - embeddings
 - large bid generation
 - outcome-feedback extraction
+- expiry and reminder processing
 
 These must use a durable job pattern.
 
@@ -312,23 +340,39 @@ A background job must:
 - create a durable job record before processing
 - use a unique idempotency key
 - record organisation ownership
+- record its current step
 - record status and progress
 - store partial results
 - cap retry attempts
 - distinguish retryable and terminal errors
 - support manual retry
+- support cancellation where practical
 - preserve approved customer data
 - avoid duplicate findings
 - expose progress to the customer where relevant
 - record start, completion and failure timestamps
 
-Do not use an untracked fire-and-forget promise as the only execution mechanism.
+Do not use:
+
+- fire-and-forget promises as the only execution mechanism
+- client-side timers as orchestration
+- one long HTTP request for a multi-page crawl
+- an untracked background promise after returning a response
+- infinite automatic retries
 
 Do not assume a serverless function will always remain alive after sending a response.
 
 Select the final queue and worker mechanism explicitly before building high-volume research processing.
 
 ## Queue and orchestration decision
+
+Vercel Workflow is the preferred durable orchestration layer for multi-step
+background work, subject to confirming its suitability when each feature is
+implemented. If Vercel Workflow is not yet configured when a background feature
+is built, stop, recommend the exact setup, identify any alternative, explain the
+trade-offs, and obtain approval before choosing a different durable-job platform.
+Keep background-job application logic portable: workflow definitions orchestrate
+application services rather than contain all extraction and business logic.
 
 Until a durable production queue is selected:
 
@@ -378,10 +422,32 @@ Website crawling must not run as one unbounded request.
 - Scan or quarantine files where appropriate.
 - Do not execute uploaded content.
 - Do not trust file extensions.
-- Record uploader, organisation and upload time.
+- Record uploader, organisation, upload time, document type, size and content hash.
 - Large processing tasks must run asynchronously.
 - Temporary copies must be deleted when no longer needed.
 - Extracted text must retain document and page provenance.
+- Do not log document contents.
+- Support customer export and deletion.
+- Define retention rules before production launch.
+
+Expected sensitive uploads include previous tender submissions, contracts,
+references, certificates, insurance schedules, policies, accounts, KPI reports,
+case studies, mobilisation plans, pricing support documents, buyer feedback and
+commercially sensitive internal material. Plan for these from the beginning.
+
+Malware scanning uses an adapter boundary; the exact provider is intentionally
+deferred (see Deferred decisions). Until scanning is implemented, files requiring
+automated processing must carry a clear safety state:
+
+- uploaded
+- pending scan
+- safe for processing
+- quarantined
+- rejected
+
+Do not claim files are scanned unless a real scanner has run. When automated file
+processing is about to be enabled for production, stop and recommend a scanning
+provider.
 
 ## Environment separation
 
@@ -465,6 +531,7 @@ Make errors traceable across both systems with a shared correlation ID.
 ## Multi tenant security
 
 - Every tenant-owned table must contain organisation_id or account_id.
+- Users belong to organisations through membership records; do not rely only on a user row containing a single organisation ID.
 - Every customer read and mutation must be tenant-scoped.
 - RLS must be enabled for every tenant-owned table.
 - Every new tenant-owned table requires policies in the same migration.
@@ -585,3 +652,422 @@ Do not claim done while:
 - required environment variables are missing
 - a live integration has not been verified
 - the committed tree differs materially from the tested implementation
+
+# Tender OS launch decisions and product-stack rules
+
+These are concrete product and stack decisions for the current build. They layer
+on top of the architecture and engineering standards above and never override
+the safety rules at the top of this file.
+
+## Confirmed launch stack
+
+Tender OS will initially use:
+
+- Next.js App Router, subject to confirming this from the repository
+- Vercel for hosting and the primary server-side runtime
+- Vercel server actions and route handlers
+- Vercel AI SDK
+- Vercel AI Gateway for production AI model access
+- Vercel Workflow for durable asynchronous orchestration where available and appropriate
+- Supabase Postgres
+- Supabase Auth
+- Supabase Storage
+- Supabase Row Level Security
+- Resend for transactional email
+- React Email for templates
+- Stripe Checkout
+- Stripe Billing
+- Stripe Customer Portal
+- One customer organisation per account at initial launch
+- One live Supabase project during the current solo-development phase
+- Support for commercially sensitive customer-document uploads from the beginning
+
+Before adding framework-specific rules, verify whether this repository uses Next.js App Router.
+
+If it does not, stop and report the difference rather than silently applying unsuitable architecture.
+
+## One live Supabase environment during development
+
+There is currently one live Supabase project.
+
+This is the explicit, documented approval that `Environment separation` refers
+to: during the solo-development phase local and Vercel preview deployments may
+therefore connect to live data. It does not relax any safety rule — the
+prohibited actions below still apply, and destructive or bulk mutations remain
+governed by the `Database` and `Change discipline` rules above.
+
+Apply these safeguards:
+
+- Preview deployments must not send email to real customers.
+- Preview deployments must not initiate live Stripe payments.
+- Preview deployments must not run scheduled research jobs.
+- Preview deployments must not run bulk outreach.
+- Preview deployments must not process live documents automatically.
+- Preview deployments must not perform destructive or bulk data mutations.
+- Preview deployments must not execute production webhooks as if they were production.
+- Any preview mutation of live customer data requires explicit approval.
+- Use Stripe test mode outside production.
+- Use an email sink or strict recipient allowlist outside production.
+- Show a visible non-production banner on preview deployments.
+- Use an explicit deployment-environment helper.
+
+Supported deployment environments should include:
+
+- local
+- preview
+- production
+
+Do not rely only on NODE_ENV.
+
+Before real external customers are onboarded, stop and recommend creating a separate development or staging Supabase project.
+
+## Single-organisation launch model
+
+Initial launch supports one customer organisation per account. Still design
+tenancy so future multi-organisation support does not require a rebuild.
+
+The tenancy enforcement mechanics — organisation_id on every tenant-owned table,
+membership records, organisation-scoped reads and mutations, server-side
+membership verification, RLS enabled with policies in the same migration, default
+deny, and cross-tenant access tests — are defined in `Multi tenant security` and
+`Authentication and authorisation` and apply here in full. Do not restate or
+weaken them.
+
+Launch-specific decisions:
+
+- Do not build group-company account switching at launch unless requested.
+
+The data model may still record:
+
+- bidding legal entity
+- trading company
+- holding company
+- delivery entity
+- related company
+- former name
+
+## Professional user roles
+
+Professional bid writers and reviewers may be added later.
+
+Prepare the permission model for:
+
+- bid_lead
+- reviewer
+- bid_operations
+- colleague_request_recipient
+
+Do not build their complete user experiences merely because the roles exist.
+
+Feature-gate future professional workspaces.
+
+Reviewer access must always be limited to:
+
+- assigned bids
+- authorised questions
+- approved evidence required for the review
+- relevant customer confirmations
+
+Reviewers must not receive automatic access to the full customer evidence library.
+
+When development reaches the first professionally delivered bid, stop and ask whether:
+
+- writers will be employees or subcontractors
+- they need direct platform accounts
+- reviewer independence is required
+- conflict declarations are required
+- time tracking is required
+- customer communication occurs through Tender OS
+
+## Transactional email
+
+Use Resend for application email and React Email for templates.
+
+Email must be built as part of the product.
+
+Likely messages include:
+
+- account and sign-in messages not handled by Supabase
+- company research complete
+- colleague information request
+- evidence request
+- task reminder
+- credential expiry warning
+- tender deadline warning
+- qualification confirmation
+- payment confirmation
+- subscription-status messages
+- bid draft ready
+- professional review complete
+- final response pack ready
+- support acknowledgement
+
+Use a dedicated sending subdomain, for example:
+
+- notify.tenderos.co.uk
+- mail.tenderos.co.uk
+
+Do not casually send application mail from the main company mailbox domain.
+
+All sends run server-side.
+
+Create a central email service and typed template registry.
+
+Record:
+
+- organisation_id
+- recipient
+- template
+- related entity
+- idempotency key
+- provider message ID
+- delivery status
+- sent time
+- failure category
+
+Rules:
+
+- Preview deployments cannot send to real customers.
+- Non-production uses a sink address or allowlist.
+- Every send has an idempotency key.
+- Verify webhook signatures.
+- Store webhook events.
+- Process webhook events idempotently.
+- Do not include sensitive tender or evidence content when a secure link is sufficient.
+- Magic-link URLs must be scoped, expiring and revocable.
+- Separate transactional email from future marketing outreach.
+- Do not use transactional infrastructure for bulk prospect campaigns without a separate decision.
+
+Expected environment variables include:
+
+- RESEND_API_KEY
+- RESEND_WEBHOOK_SECRET
+- EMAIL_FROM_ADDRESS
+- EMAIL_REPLY_TO
+- NON_PRODUCTION_EMAIL_RECIPIENT
+
+When email implementation begins, stop and provide:
+
+1. Resend account setup steps.
+2. Sending-domain DNS records.
+3. Exact environment variables.
+4. Which Vercel environments need them.
+5. Webhook setup instructions.
+6. How to verify sending safely.
+7. Whether a redeployment is required.
+
+Do not request or print secret values.
+
+## Stripe billing
+
+Billing is required at launch.
+
+Use:
+
+- Stripe Checkout
+- Stripe Billing
+- Stripe Customer Portal
+- verified Stripe webhooks
+
+Initial products may include:
+
+- Tender OS Guided monthly subscription
+- Tender OS Guided annual subscription later
+- Full Tender Qualification
+- AI Draft Pack
+- Professionally Reviewed Bid Pack
+- Evidence Builder
+- Complex Bid deposit or scoped payment later
+- Managed Bid Desk subscriptions later
+- Additional bid credits later
+
+Use Stripe-hosted Checkout initially.
+
+Do not build custom card-entry forms unless explicitly approved.
+
+Stripe is authoritative for:
+
+- successful payment
+- invoice status
+- subscription status
+- cancellation
+- refund status
+
+Tender OS is authoritative for:
+
+- product entitlement
+- fulfilment
+- qualification delivery
+- bid-production status
+- credit allocation
+
+Never trust prices, product IDs, entitlement claims or completion states supplied by the browser.
+
+Use centrally configured Stripe product and price IDs.
+
+Money must use integer minor units or fixed-precision database types, never floating point.
+
+Required webhook handling should cover relevant events such as:
+
+- checkout session completed
+- invoice paid
+- invoice payment failed
+- customer subscription created
+- customer subscription updated
+- customer subscription deleted
+- refund or charge reversal where applicable
+
+Webhook requirements:
+
+- Verify Stripe signatures.
+- Persist the Stripe event ID.
+- Process idempotently.
+- Support replay.
+- Do not assume webhook delivery order.
+- Do not grant access based only on the successful Checkout return URL.
+- Reconcile local billing state periodically.
+- Return webhook success only after durable receipt.
+- Keep Stripe test and live configuration separate.
+- Preview and local environments use Stripe test mode.
+- Live billing requires explicit approval before activation.
+
+Expected environment variables include:
+
+- STRIPE_SECRET_KEY
+- STRIPE_WEBHOOK_SECRET
+- NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY where required
+- STRIPE_PRICE_GUIDED_MONTHLY
+- price IDs for transactional products
+- NEXT_PUBLIC_APP_URL
+
+When billing implementation begins, stop and provide:
+
+1. Stripe account setup steps.
+2. Products and prices to create.
+3. Exact environment variables.
+4. Webhook URL and events.
+5. Test-mode verification steps.
+6. Customer Portal configuration.
+7. Live-mode activation checklist.
+8. Whether a redeployment is required.
+
+Do not request or print secret values.
+
+## Product entitlements
+
+Create one central entitlement service.
+
+Do not scatter subscription checks and product-name comparisons across UI components.
+
+Potential entitlements include:
+
+- company profile
+- opportunity matching
+- number of opportunity assessments
+- evidence-library access
+- qualification workflow
+- AI Draft access
+- professional-review access
+- active-bid workspace
+- Managed Bid Desk
+- bid credits
+- internal research tools
+
+The server must enforce entitlements.
+
+Hiding a button is not enforcement.
+
+Entitlement changes must be:
+
+- auditable
+- linked to a Stripe event or authorised internal action
+- safe to replay
+- reversible
+- consistent across all screens
+
+## Reverse-matching prospect data
+
+Keep reverse-matching prospect data in the same Supabase project initially, but separate it clearly from customer tenant data.
+
+Use separate tables and access rules for:
+
+- tenders selected for acquisition
+- supplier fingerprints
+- candidate companies
+- prospect findings
+- prospect contacts
+- outreach approvals
+- outreach events
+- opt-outs
+- suppression records
+- private preview tokens
+- conversion events
+
+A prospect is not a customer organisation.
+
+Do not create full customer tenant records until:
+
+- the prospect claims the preview
+- creates an account
+- or an authorised internal process converts the prospect
+
+Prospect data must not be exposed through ordinary customer RLS policies.
+
+Maintain permanent direct-marketing suppression where required.
+
+Do not automatically use Companies House officers as marketing contacts.
+
+## Deferred decisions
+
+The following decisions remain intentionally deferred:
+
+- exact model selected for each AI task
+- malware-scanning provider
+- whether writers are employees or subcontractors
+- whether writers and reviewers are included in the first commercial launch
+- creation of a separate staging Supabase project
+- inbound email processing
+- Managed Bid Desk billing
+- multi-organisation customer accounts
+- advanced marketing-email platform
+
+When one becomes necessary:
+
+1. Stop.
+2. Inspect the current implementation and requirements.
+3. Compare suitable options.
+4. Recommend one.
+5. Explain cost, complexity and lock-in.
+6. Obtain approval before adding the dependency.
+
+## Manual setup rule
+
+This is the umbrella version of the stop-and-tell discipline in `Environment
+variables` and `Environment separation`. Whenever implementation requires any of
+the following:
+
+- a Vercel project setting
+- Vercel Workflow setup
+- AI Gateway configuration
+- a Supabase setting or extension
+- a new environment variable
+- a Resend API key
+- email-domain DNS
+- a Stripe product or price
+- a Stripe webhook
+- a Companies House key
+- a procurement-data credential
+- a scheduled job
+- another external service
+
+Stop before claiming completion and state:
+
+1. What the user must create.
+2. Where to create it.
+3. Exact environment-variable names.
+4. Which environments require them.
+5. Whether a deployment or redeployment is needed.
+6. How to verify it safely.
+7. What functionality remains unavailable until complete.
+
+Never paste, print or request secrets in the conversation.
