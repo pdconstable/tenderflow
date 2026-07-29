@@ -1,0 +1,9 @@
+allowBuilds:
+  # esbuild's postinstall is a no-op when its prebuilt platform package is
+  # present (it is, via optional deps); allowing it avoids any runtime
+  # "binary not found" surprises for Vitest.
+  esbuild: true
+  # sharp and unrs-resolver ship prebuilt platform binaries via optional deps;
+  # their build scripts are unnecessary, so they stay disabled.
+  sharp: false
+  unrs-resolver: false

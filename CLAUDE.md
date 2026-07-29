@@ -165,7 +165,7 @@ task spans multiple areas, read all applicable files.
 | Design or UI changes | [design-system.md](docs/engineering/design-system.md) |
 | Audit work | apply the read-only investigation rule above first |
 
-All ten engineering documents:
+All nine engineering documents:
 
 - [architecture-and-platform.md](docs/engineering/architecture-and-platform.md) — stack, Vercel/Supabase responsibilities, Edge policy, environments, deployment, observability, launch stack, one-live-project constraint, manual-setup rule, deferred decisions.
 - [security.md](docs/engineering/security.md) — auth, authorisation, multi-tenant isolation, deny-by-default RLS, RLS enforcement tests, service-role limits, roles, SSRF/crawling.
