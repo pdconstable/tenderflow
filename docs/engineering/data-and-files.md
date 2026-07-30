@@ -6,7 +6,7 @@
 
 **Authority:** [CLAUDE.md](../../CLAUDE.md) is the highest-priority instruction file and always takes precedence. This document is a mandatory extension of CLAUDE.md, not optional guidance. No rule here is weaker for living in this file.
 
-**Related:** [security.md](security.md), [ai.md](ai.md), [reliability-and-state.md](reliability-and-state.md), [architecture-and-platform.md](architecture-and-platform.md).
+**Related:** [multi-tenant-domain.md](multi-tenant-domain.md), [security.md](security.md), [ai.md](ai.md), [reliability-and-state.md](reliability-and-state.md), [architecture-and-platform.md](architecture-and-platform.md).
 
 ---
 
@@ -73,6 +73,11 @@ The data model may still record:
 - delivery entity
 - related company
 - former name
+
+The full organisation, legal-entity and trading-identity ownership model these
+records belong to is defined in [multi-tenant-domain.md](multi-tenant-domain.md).
+Trading identities are first-class records there, not free-text or JSON on the
+legal entity.
 
 ## Reverse-matching prospect data
 

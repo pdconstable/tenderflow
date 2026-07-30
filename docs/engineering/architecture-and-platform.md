@@ -6,7 +6,7 @@
 
 **Authority:** [CLAUDE.md](../../CLAUDE.md) is the highest-priority instruction file and always takes precedence. This document is a mandatory extension of CLAUDE.md, not optional guidance. No rule here is weaker for living in this file. It extends — and never overrides — the safety rules in CLAUDE.md.
 
-**Related:** [reliability-and-state.md](reliability-and-state.md), [integrations.md](integrations.md), [ai.md](ai.md), [testing-and-release.md](testing-and-release.md), [data-and-files.md](data-and-files.md).
+**Related:** [multi-tenant-domain.md](multi-tenant-domain.md), [reliability-and-state.md](reliability-and-state.md), [integrations.md](integrations.md), [ai.md](ai.md), [testing-and-release.md](testing-and-release.md), [data-and-files.md](data-and-files.md).
 
 ---
 
@@ -309,6 +309,12 @@ The following decisions remain intentionally deferred:
 - Managed Bid Desk billing
 - multi-organisation customer accounts
 - advanced marketing-email platform
+
+Multi-organisation customer accounts means one account owning more than one
+subscribing organisation, and remains deferred. It does not mean multiple legal
+entities or trading identities: multiple legal entities under one organisation,
+and multiple trading identities under one legal entity, are in scope from the
+first schema as defined in [multi-tenant-domain.md](multi-tenant-domain.md).
 
 When one becomes necessary:
 

@@ -115,6 +115,10 @@ engineering documents. They are not suggestions.
 
 - **Deny-by-default tenant isolation.** Every customer read and mutation is
   tenant-scoped; never trust an organisation ID from the browser. → [security.md](docs/engineering/security.md)
+- **Organisation, legal entity and trading identity are distinct first-class
+  records.** Every bid resolves to an exact legal entity and trading identity;
+  trading names never obscure the legal contracting party; customer analysis is
+  never stored on global procurement records. → [multi-tenant-domain.md](docs/engineering/multi-tenant-domain.md)
 - **RLS enabled on every tenant-owned table**, with explicit policies in the
   same migration, and mechanically tested. Documentation alone is insufficient. → [security.md](docs/engineering/security.md)
 - **No `USING true` and no `WITH CHECK true`.** → [security.md](docs/engineering/security.md)
@@ -154,19 +158,23 @@ task spans multiple areas, read all applicable files.
 
 | Task | Read |
 | --- | --- |
-| Database, RLS, permissions or auth work | [security.md](docs/engineering/security.md) and [data-access-and-scale.md](docs/engineering/data-access-and-scale.md) |
-| New customer-facing feature | [design-system.md](docs/engineering/design-system.md), [security.md](docs/engineering/security.md), [reliability-and-state.md](docs/engineering/reliability-and-state.md) and [testing-and-release.md](docs/engineering/testing-and-release.md) |
-| AI or research work | [ai.md](docs/engineering/ai.md), [architecture-and-platform.md](docs/engineering/architecture-and-platform.md), [data-and-files.md](docs/engineering/data-and-files.md) and [testing-and-release.md](docs/engineering/testing-and-release.md) |
-| Stripe, email or third-party integrations | [integrations.md](docs/engineering/integrations.md), [security.md](docs/engineering/security.md) and [reliability-and-state.md](docs/engineering/reliability-and-state.md) |
-| Background jobs or automation | [reliability-and-state.md](docs/engineering/reliability-and-state.md) and [architecture-and-platform.md](docs/engineering/architecture-and-platform.md) |
+| Database schema work, RLS, permissions, authentication or authorisation | [multi-tenant-domain.md](docs/engineering/multi-tenant-domain.md), [security.md](docs/engineering/security.md) and [data-access-and-scale.md](docs/engineering/data-access-and-scale.md) |
+| New customer-facing feature | [multi-tenant-domain.md](docs/engineering/multi-tenant-domain.md), [design-system.md](docs/engineering/design-system.md), [security.md](docs/engineering/security.md), [reliability-and-state.md](docs/engineering/reliability-and-state.md) and [testing-and-release.md](docs/engineering/testing-and-release.md) |
+| Company onboarding, company research or prospect conversion | [multi-tenant-domain.md](docs/engineering/multi-tenant-domain.md), [security.md](docs/engineering/security.md) and [data-and-files.md](docs/engineering/data-and-files.md) |
+| Public-source matching, opportunity matching, assessments or bids | [multi-tenant-domain.md](docs/engineering/multi-tenant-domain.md), [ai.md](docs/engineering/ai.md), [data-access-and-scale.md](docs/engineering/data-access-and-scale.md) and [reliability-and-state.md](docs/engineering/reliability-and-state.md) |
+| Evidence, storage or document upload/processing | [multi-tenant-domain.md](docs/engineering/multi-tenant-domain.md), [data-and-files.md](docs/engineering/data-and-files.md), [security.md](docs/engineering/security.md) and [ai.md](docs/engineering/ai.md) |
+| AI or research work | [multi-tenant-domain.md](docs/engineering/multi-tenant-domain.md), [ai.md](docs/engineering/ai.md), [architecture-and-platform.md](docs/engineering/architecture-and-platform.md), [data-and-files.md](docs/engineering/data-and-files.md) and [testing-and-release.md](docs/engineering/testing-and-release.md) |
+| Background jobs or automation | [multi-tenant-domain.md](docs/engineering/multi-tenant-domain.md), [reliability-and-state.md](docs/engineering/reliability-and-state.md) and [architecture-and-platform.md](docs/engineering/architecture-and-platform.md) |
+| Billing, Stripe, email or third-party integrations | [multi-tenant-domain.md](docs/engineering/multi-tenant-domain.md), [integrations.md](docs/engineering/integrations.md), [security.md](docs/engineering/security.md) and [reliability-and-state.md](docs/engineering/reliability-and-state.md) |
+| Internal administration or platform roles | [multi-tenant-domain.md](docs/engineering/multi-tenant-domain.md) and [security.md](docs/engineering/security.md) |
 | Lists, filtering, search or reporting | [data-access-and-scale.md](docs/engineering/data-access-and-scale.md) |
-| Document upload or processing | [data-and-files.md](docs/engineering/data-and-files.md), [security.md](docs/engineering/security.md) and [ai.md](docs/engineering/ai.md) |
 | Deployment or environment changes | [architecture-and-platform.md](docs/engineering/architecture-and-platform.md), [integrations.md](docs/engineering/integrations.md) and [testing-and-release.md](docs/engineering/testing-and-release.md) |
 | Design or UI changes | [design-system.md](docs/engineering/design-system.md) |
 | Audit work | apply the read-only investigation rule above first |
 
-All nine engineering documents:
+All ten engineering documents:
 
+- [multi-tenant-domain.md](docs/engineering/multi-tenant-domain.md) — the ownership model (organisation, legal entity, trading identity, bidding identity), the four data zones, identity provenance, evidence ownership versus applicability, multi-level matching, platform-versus-customer roles, identity invariants, and the foundational first-schema proposal with its required tests and fixture.
 - [architecture-and-platform.md](docs/engineering/architecture-and-platform.md) — stack, Vercel/Supabase responsibilities, Edge policy, environments, deployment, observability, launch stack, one-live-project constraint, manual-setup rule, deferred decisions.
 - [security.md](docs/engineering/security.md) — auth, authorisation, multi-tenant isolation, deny-by-default RLS, RLS enforcement tests, service-role limits, roles, SSRF/crawling.
 - [reliability-and-state.md](docs/engineering/reliability-and-state.md) — silent-write prevention, state machines, idempotency, atomicity, background jobs, automation reliability, environment-safe communications, cutover, environment validation, canonical logic.
