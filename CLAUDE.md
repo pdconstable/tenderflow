@@ -25,8 +25,12 @@ everything.
   safety guard FIRST, before any DB access. Make this the literal first line:
     source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/supabase_guard.sh"
   (adjust the relative path to reach scripts/lib/supabase_guard.sh). The guard
-  reads the ref from the live connection in use and aborts non-zero unless it
-  is vrngjoorzwcgagwpzzyt; it hard-refuses wcxxhzenwqlukhtphjyc by name.
+  selects the connection from one deterministic repo-scoped source, verifies the
+  whole destination and project identity, and aborts non-zero unless it is
+  vrngjoorzwcgagwpzzyt; it hard-refuses wcxxhzenwqlukhtphjyc by name. Ambient
+  DATABASE_URL/SUPABASE_DB_URL are prohibited; TENDERFLOW_DATABASE_URL is the
+  only permitted override. Full connection contract: docs/engineering/security.md
+  (Database connection guard contract).
 
 ## Priority order
 

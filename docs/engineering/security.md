@@ -127,6 +127,33 @@ Rules:
 - service-role operations require tests for cross-tenant denial
 - service-role keys must never be logged
 
+## Database connection guard contract
+
+Every script or task that performs a remote database operation must run the
+Supabase guard (`scripts/lib/supabase_guard.sh`) first, before any database
+access. The guard enforces a deterministic, fail-closed connection contract so
+behaviour never depends on the ambient shell on a machine that hosts several
+projects. The contract (not the implementation) is:
+
+- `DATABASE_URL` and `SUPABASE_DB_URL` are prohibited for Tender OS database
+  operations. Their mere presence is a hard failure; they are never used as a
+  connection source.
+- The repository-linked `supabase/.temp/pooler-url` is the default connection
+  source.
+- `TENDERFLOW_DATABASE_URL` is the only permitted deliberate override.
+- `SUPABASE_PROJECT_REF` is never trusted as proof. Every selected connection is
+  independently verified — whole destination (Supabase pooler or direct host)
+  and project identity — against the expected project, and any other project
+  (including the forbidden one) is refused.
+- Live-probe suppression is test-only: it requires the guard's explicit test
+  mode against a fixture/temporary root and can never be used against the real
+  repository link files.
+
+The guard's exit codes, host-form rules and behaviour are documented in the
+script header and covered by `tests/guards/supabase-guard.test.ts`; do not
+restate the implementation here. The project hard stops and destructive-script
+safety rule in [CLAUDE.md](../../CLAUDE.md) remain authoritative.
+
 ## Authentication and authorisation
 
 - Authentication and authorisation are separate.
